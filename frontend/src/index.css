@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: 'MyDigitalFont';
+    src: url('../src/assets/fonts/DigitalPixelV124-Regular.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Уводим на задний план */
+    image-rendering: pixelated;
+    object-fit: cover; /* Растягиваем как background-size: cover */
+}
+#mapCanvas {
+    display: block;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    image-rendering: pixelated;
+}
+#planCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Чтобы кнопки были сверху и кликались */
+    pointer-events: none; /* Чтобы клики пролетали сквозь канвас к кнопкам */
+    image-rendering: pixelated;
+}
+#fishCanvas {
+    display: block;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    image-rendering: pixelated;
+}
+/* Контейнеру, где лежит канвас, нужно относительное позиционирование */
+.hero-section {
+    position: relative;
+    overflow: hidden;
+}
