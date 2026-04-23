@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Navbar from '../components/Navbar';
+import { ChevronDown, Info } from 'lucide-react';
+import bgImgSrc from '../assets/images/background/winter.jpg';
 
 const WinterPage = () => {
     const canvasRef = useRef(null);

@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import PixelButton from '../components/ui/PixelButton';
 import { useNavigate } from 'react-router-dom';
+import lakeImgSrc from '../assets/images/background/lake.jpg';
+import birdImgSrc from '../assets/images/bird.png';
 
 const WaterBodyPage = () => {
     const canvasRef = useRef(null);
