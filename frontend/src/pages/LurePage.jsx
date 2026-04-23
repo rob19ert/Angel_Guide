@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
+import lurePlaceholder from '../assets/images/spinning/spin_noo.png';
 import Stepper from '../components/Stepper';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
@@ -117,7 +118,7 @@ const LurePage = () => {
                                             {/* Блок картинки (Строго фиксированная высота) */}
                                             <div className="w-full h-24 sm:h-28 flex items-center justify-center mb-4 bg-black/10 border border-transparent group-hover:border-black/20 relative overflow-hidden">
                                                 <img 
-                                                    src={lure.image_url || '/src/assets/images/spinning/lure_placeholder.png'} 
+                                                    src={lure.image_url || lurePlaceholder} 
                                                     alt=""
                                                     className="w-full h-full p-2 object-contain pixelated group-hover:scale-110 transition-transform relative z-10"
                                                     onError={(e) => { e.target.style.display = 'none'; }}

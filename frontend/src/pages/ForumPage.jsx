@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import { MessageSquare, PlusCircle } from 'lucide-react';
-import bgImageSrc from '/src/assets/images/background/prof_bg.jpg';
+import bgImageSrc from '../assets/images/background/prof_bg.jpg';
 
 const ForumPage = () => {
     const canvasRef = useRef(null);

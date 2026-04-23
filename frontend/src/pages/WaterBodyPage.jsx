@@ -28,9 +28,9 @@ const WaterBodyPage = () => {
 
         // Загрузка ресурсов
         const lakeImg = new Image();
-        lakeImg.src = '/src/assets/images/background/lake.jpg'; // Путь от корня public
+        lakeImg.src = lakeImgSrc;
         const birdImg = new Image();
-        birdImg.src = '/src/assets/images/bird.png';
+        birdImg.src = birdImgSrc;
 
         let sparkles = [];
         let frame = 0;

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../api/api';
-import bgImg from '/src/assets/images/background/lake_bg.jpg';
+import bgImg from '../assets/images/background/lake_bg.jpg';
 import { Fish, MapPin, Package, AlertCircle, ArrowLeft, Trash2 } from 'lucide-react';
 
 const SavedPlanPage = () => {

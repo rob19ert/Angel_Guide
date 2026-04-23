@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useRecommendation } from '../context/RecommendationContext';
 import api from '../api/api';
-import bgImg from '/src/assets/images/background/lake_bg.jpg';
+import bgImg from '../assets/images/background/lake_bg.jpg';
 import { Fish, MapPin, Package, AlertCircle, Bookmark } from 'lucide-react';
 
 const ReportPage = () => {

@@ -22,7 +22,7 @@ const WinterPage = () => {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const bg = new Image();
-        bg.src = '/src/assets/images/background/winter.jpg';
+        bg.src = bgImgSrc;
         let snowflakes = [];
         let animationId;
 

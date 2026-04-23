@@ -5,8 +5,8 @@ import { useRecommendation } from '../context/RecommendationContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 
-import bgImg from '/src/assets/images/background/bubu.jpg';
-import fisherImg from '/src/assets/images/spinning/fishman.png';
+import bgImg from '../assets/images/background/bubu.jpg';
+import fisherImg from '../assets/images/spinning/fishman.png';
 
 const InventorySlot = ({ title, itemName, id, position }) => (
     <div

@@ -6,7 +6,7 @@ import { Camera, X, Bookmark, Fish, Calendar, PlusCircle, MapPin, Weight } from 
 import { useNavigate } from 'react-router-dom';
 
 // ИМПОРТЫ КАРТИНОК
-import bgImageSrc from '/src/assets/images/background/prof_bg.jpg';
+import bgImageSrc from '../assets/images/background/prof_bg.jpg';
 import avatarPlaceholder from '../assets/images/ded-Photoroom.png';
 import fishIconDefault from '../assets/images/fish.jpg';
 

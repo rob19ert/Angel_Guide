@@ -4,7 +4,7 @@
 
 @font-face {
     font-family: 'MyDigitalFont';
-    src: url('../src/assets/fonts/DigitalPixelV124-Regular.otf') format('opentype');
+    src: url('./assets/fonts/DigitalPixelV124-Regular.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
 }

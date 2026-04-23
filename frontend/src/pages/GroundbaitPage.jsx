@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Navbar from '../components/Navbar';
+import bgImgSrc from '../assets/images/background/winter.jpg';
 import Stepper from '../components/Stepper';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
@@ -42,7 +43,7 @@ const GroundbaitPage = () => {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             const bg = new Image();
-            bg.src = '/src/assets/images/background/winter.jpg';
+            bg.src = bgImgSrc;
             let snowflakes = [];
             let animationId;
     

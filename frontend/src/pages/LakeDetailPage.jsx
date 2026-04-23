@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {Search, ChevronDown, MapPin, Map as MapIcon, List as ListIcon, Info} from "lucide-react";
 import Navbar from "../components/Navbar.jsx";
+import miniLakeSrc from '../assets/images/mini_lake.jpg';
 import Stepper from "../components/Stepper.jsx";
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import bgImgSrc from "../assets/images/background/lake_bg.jpg";
@@ -11,7 +12,7 @@ import { useRecommendation } from '../context/RecommendationContext';
 
 const createPixelIcon = (imageUrl) => new L.divIcon({
     className: 'custom-div-icon',
-    html: `<div class="w-10 h-10 bg-yellow-400 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center pixelated overflow-hidden"><img src="${imageUrl || '/src/assets/images/mini_lake.jpg'}" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" /></div>`,
+    html: `<div class="w-10 h-10 bg-yellow-400 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center pixelated overflow-hidden"><img src="${imageUrl || miniLakeSrc}" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" /></div>`,
     iconSize:[40, 40],
     iconAnchor:[20, 40],
     popupAnchor:[0, -40]

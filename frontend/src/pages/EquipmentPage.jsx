@@ -83,32 +83,32 @@ const EquipmentPage = () => {
         switch (product.category) {
             case 'удочка': 
             if (name.includes('спиннинг') || desc.includes('спиннинг')) {
-                return '/src/assets/images/spinning/green-spin.png';
+                return new URL('../assets/images/spinning/green-spin.png', import.meta.url).href;
             }
             if (name.includes('фидер') || desc.includes('фидер')) {
-                return '/src/assets/images/spinning/spin_noo.png';
+                return new URL('../assets/images/spinning/spin_noo.png', import.meta.url).href;
             }
             if (name.includes('зимняя') || desc.includes('зимняя')) {
-                return '/src/assets/images/spinning/blue.png';
+                return new URL('../assets/images/spinning/blue.png', import.meta.url).href;
             }
             if (name.includes('мах') || desc.includes('мах')) {
-                return '/src/assets/images/spinning/red_spin.png';
+                return new URL('../assets/images/spinning/red_spin.png', import.meta.url).href;
             }
-            return '/src/assets/images/spinning/green-spin.png';
+            return new URL('../assets/images/spinning/green-spin.png', import.meta.url).href;
 
             case 'куртка': 
              if (name.includes('зимняя') || desc.includes('зимняя')) {
-                return '/src/assets/images/clothe_of_fisherman/tulup1.png';
+                return new URL('../assets/images/clothe_of_fisherman/tulup1.png', import.meta.url).href;
             }
             if (name.includes('летняя') || desc.includes('летняя')) {
-                return '/src/assets/images/clothe_of_fisherman/brown_jacket1.png';
+                return new URL('../assets/images/clothe_of_fisherman/brown_jacket1.png', import.meta.url).href;
             }
             if (name.includes('демисезонная') || desc.includes('демисезонная')) {
-                return '/src/assets/images/clothe_of_fisherman/green_jacket.png';
+                return new URL('../assets/images/clothe_of_fisherman/green_jacket.png', import.meta.url).href;
             }
-            return '/src/assets/images/clothe_of_fisherman/green_jacket.png';
-            case 'штаны': return '/src/assets/images/clothe_of_fisherman/green_pants1.png';
-            case 'обувь': return '/src/assets/images/clothe_of_fisherman/green_boots.png';
+            return new URL('../assets/images/clothe_of_fisherman/green_jacket.png', import.meta.url).href;
+            case 'штаны': return new URL('../assets/images/clothe_of_fisherman/green_pants1.png', import.meta.url).href;
+            case 'обувь': return new URL('../assets/images/clothe_of_fisherman/green_boots.png', import.meta.url).href;
             
             default: return null;
         }

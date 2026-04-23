@@ -12,11 +12,11 @@ const HomePage = () => {
 
         // Загрузка ресурсов
         const bg = new Image();
-        bg.src = '/src/assets/images/background/background.jpeg';
+        bg.src = bgImgSrc;
         const fisherman = new Image();
-        fisherman.src = '/src/assets/images/spinning/fishman.png';
+        fisherman.src = fisherImgSrc;
         const bird = new Image();
-        bird.src = '/src/assets/images/bird.png';
+        bird.src = birdImgSrc;
 
         let ripples = [];
         let frame = 0;
