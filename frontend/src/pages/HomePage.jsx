@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import bgImgSrc from '../assets/images/background/background.jpeg';
+import fisherImgSrc from '../assets/images/spinning/fishman.png';
+import birdImgSrc from '../assets/images/bird.png';
 
 const HomePage = () => {
     const canvasRef = useRef(null);
