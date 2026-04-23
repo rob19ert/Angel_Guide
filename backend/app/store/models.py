@@ -46,6 +46,9 @@ class User(Base):
     forum_topics: Mapped[List["ForumTopic"]] = relationship(back_populates="author")
     forum_messages: Mapped[List["ForumMessage"]] = relationship(back_populates="author")
     inventory_items: Mapped[List["UserInventory"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    saved_recommendations: Mapped[List["SavedRecommendation"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    post_reactions: Mapped[List["PostReaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    post_comments: Mapped[List["PostComment"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class UserInventory(Base):
@@ -197,6 +200,7 @@ class Inventory(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     category: Mapped[InventoryCategory] = mapped_column(nullable=False)
+    filter_type: Mapped[Optional[str]] = mapped_column(String(50)) # Для фильтров на фронтенде (Спиннинг, Зима и тд)
     price: Mapped[Optional[float]] = mapped_column(Float)
     description: Mapped[Optional[str]] = mapped_column(Text)
     
@@ -258,7 +262,12 @@ class CatchPost(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     weight: Mapped[Optional[float]] = mapped_column(Float)
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+    
     author: Mapped["User"] = relationship(back_populates="catch_posts")
+    reactions: Mapped[List["PostReaction"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+    comments: Mapped[List["PostComment"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+    fish: Mapped[Optional["Fish"]] = relationship()
+    waterbody: Mapped[Optional["Waterbody"]] = relationship()
 
 class ForumTopic(Base):
     __tablename__ = "forum_topics"
@@ -295,3 +304,49 @@ class WaterbodyReview(Base):
     rating: Mapped[int] = mapped_column(Integer) 
     content: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+
+class PostReaction(Base):
+    __tablename__ = "post_reactions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    post_id: Mapped[int] = mapped_column(ForeignKey("catch_posts.id"), nullable=False)
+    reaction_type: Mapped[str] = mapped_column(String(50), default="like")
+    user: Mapped["User"] = relationship(back_populates="post_reactions")
+    post: Mapped["CatchPost"] = relationship(back_populates="reactions")
+
+class PostComment(Base):
+    __tablename__ = "post_comments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    post_id: Mapped[int] = mapped_column(ForeignKey("catch_posts.id"), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+    user: Mapped["User"] = relationship(back_populates="post_comments")
+    post: Mapped["CatchPost"] = relationship(back_populates="comments")
+
+class SavedRecommendation(Base):
+    __tablename__ = "saved_recommendations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    fish_id: Mapped[Optional[int]] = mapped_column(ForeignKey("fishes.id"))
+    waterbody_id: Mapped[Optional[int]] = mapped_column(ForeignKey("waterbodies.id"))
+    rod_id: Mapped[Optional[int]] = mapped_column(ForeignKey("inventory.id"))
+    jacket_id: Mapped[Optional[int]] = mapped_column(ForeignKey("inventory.id"))
+    pants_id: Mapped[Optional[int]] = mapped_column(ForeignKey("inventory.id"))
+    shoes_id: Mapped[Optional[int]] = mapped_column(ForeignKey("inventory.id"))
+    head_id: Mapped[Optional[int]] = mapped_column(ForeignKey("inventory.id"))
+    lure_id: Mapped[Optional[int]] = mapped_column(ForeignKey("lures.id"))
+    groundbait_id: Mapped[Optional[int]] = mapped_column(ForeignKey("groundbaits.id"))
+    advice: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="saved_recommendations")
+    fish: Mapped[Optional["Fish"]] = relationship()
+    waterbody: Mapped[Optional["Waterbody"]] = relationship()
+    rod: Mapped[Optional["Inventory"]] = relationship(foreign_keys=[rod_id])
+    jacket: Mapped[Optional["Inventory"]] = relationship(foreign_keys=[jacket_id])
+    pants: Mapped[Optional["Inventory"]] = relationship(foreign_keys=[pants_id])
+    shoes: Mapped[Optional["Inventory"]] = relationship(foreign_keys=[shoes_id])
+    head: Mapped[Optional["Inventory"]] = relationship(foreign_keys=[head_id])
+    lure: Mapped[Optional["Lure"]] = relationship()
+    groundbait: Mapped[Optional["Groundbait"]] = relationship()

@@ -7,7 +7,7 @@ import { useRecommendation } from '../context/RecommendationContext';
 import { Search, ArrowRight, ShoppingBasket } from 'lucide-react';
 
 // Картинки
-import bgImg from '../assets/images/purple.jpg';
+import bgImg from '../assets/images/background/winter.jpg';
 
 const GroundbaitPage = () => {
     const canvasRef = useRef(null);
@@ -38,30 +38,64 @@ const GroundbaitPage = () => {
     );
 
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        let animationId;
-        const bg = new Image();
-        bg.src = bgImg;
-        const resize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
-        const animate = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-            animationId = requestAnimationFrame(animate);
-        };
-        window.addEventListener('resize', resize);
-        resize();
-        bg.onload = animate;
-        if(bg.complete) animate();
-        return () => {
-            cancelAnimationFrame(animationId);
-            window.removeEventListener('resize', resize);
-        };
-    },[]);
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const bg = new Image();
+            bg.src = '/src/assets/images/background/winter.jpg';
+            let snowflakes = [];
+            let animationId;
+    
+            const handleResize = () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initSnow();
+            };
+    
+            function createSnowflake() {
+                return {
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    size: Math.random() * 4 + 2,
+                    speed: Math.random() * 1 + 0.5,
+                    drift: Math.random() * 1 - 0.5
+                };
+            }
+    
+            function initSnow() {
+                snowflakes = [];
+                for (let i = 0; i < 150; i++) {
+                    snowflakes.push(createSnowflake());
+                }
+            }
+    
+            const animate = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.imageSmoothingEnabled = false;
+                if (bg.complete) {
+                    ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+                }
+                ctx.fillStyle = "white";
+                snowflakes.forEach(s => {
+                    s.y += s.speed;
+                    s.x += s.drift;
+                    if (s.y > canvas.height) {
+                        s.y = -10;
+                        s.x = Math.random() * canvas.width;
+                    }
+                    ctx.fillRect(Math.floor(s.x), Math.floor(s.y), s.size, s.size);
+                });
+                animationId = requestAnimationFrame(animate);
+            };
+    
+            window.addEventListener('resize', handleResize);
+            handleResize();
+            bg.onload = animate;
+            return () => {
+                window.removeEventListener('resize', handleResize);
+                cancelAnimationFrame(animationId);
+            };
+        }, []);
 
     return (
         // Используем жесткий h-screen для фиксации страницы
@@ -135,8 +169,7 @@ const GroundbaitPage = () => {
                                         >
                                             <div className="w-32 h-32 mb-4 relative flex items-center justify-center">
                                                 {/* Стилизация под мешок */}
-                                                <div className="absolute inset-2 bg-[#D2B48C] border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-2 group-hover:rotate-0 transition-transform"></div>
-                                                <div className="absolute top-2 left-2 right-2 h-6 bg-[#A0522D] border-b-2 border-black transform rotate-2 group-hover:rotate-0 transition-transform"></div>
+                                                
                                                 <img 
                                                     src={item.image_url || 'https://via.placeholder.com/100x120?text=Bag'} 
                                                     alt={item.name}

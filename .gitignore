@@ -174,6 +174,22 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+# Backend utility/patch scripts
+backend/fix_*.py
+backend/patch_*.py
+backend/load_*.py
+backend/fill_*.py
+backend/force_*.py
+backend/generate_*.py
+backend/import_*.py
+backend/parse_*.py
+backend/seed_*.py
+backend/test_*.py
+backend/make_public.py
+backend/config.yaml
+backend/.env
+backend/seed.json
+
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 .idea

@@ -168,8 +168,8 @@ const InventoryPage = () => {
                 </div>
             </div>
 
-            <h1 className="text-center text-white text-3xl md:text-4xl font-pixel mt-2 md:mt-4 drop-shadow-[4px_4px_0_black] uppercase">
-                Ваша Сборка
+            <h1 className="text-center text-white text-3xl md:text-4xl font-pixel mt-2 md:mt-4 drop-shadow-[4px_4px_0_black]">
+                Ваша сборка
             </h1>
 
             {/* ЛЕВАЯ КОЛОНКА */}

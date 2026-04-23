@@ -7,7 +7,7 @@ from sqlalchemy import delete, select, update, func
 from sqlalchemy.orm import selectinload
 
 from app.store.base_accessor import BaseAccessor
-from app.store.models import Fish, FishCategory, User, UserRole, Waterbody, Season, WeatherCondition, FishingTime, Inventory, Lure, Groundbait, FishWaterbodyLink, FishSeasonLink, FishWeatherLink, FishLureLink, FishInventoryLink, CatchPost, ForumTopic, ForumMessage, WaterbodyReview, FavoriteWaterbody, UserInventory
+from app.store.models import Fish, FishCategory, User, UserRole, Waterbody, Season, WeatherCondition, FishingTime, Inventory, Lure, Groundbait, FishWaterbodyLink, FishSeasonLink, FishWeatherLink, FishLureLink, FishInventoryLink, CatchPost, ForumTopic, ForumMessage, WaterbodyReview, FavoriteWaterbody, UserInventory, SavedRecommendation
 SECRET_KEY = "12345678"
 
 class AdminAccessor(BaseAccessor):
@@ -59,7 +59,10 @@ class AdminAccessor(BaseAccessor):
                 "exp": datetime.datetime.utcnow() + datetime.timedelta(days=7)
             }
             token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-            return {"token": token}
+            return {
+                "token": token,
+                "role": payload["role"]
+            }
 
     async def list_user(self) -> list:
         async with self.app.database.get_session() as session:
@@ -154,6 +157,19 @@ class AdminAccessor(BaseAccessor):
             if not fish:
                 raise ValueError("Не найдена рыба с таким id")
             
+            # Удаляем связи с рыбой
+            await session.execute(delete(FishWaterbodyLink).where(FishWaterbodyLink.fish_id == fish_id))
+            await session.execute(delete(FishSeasonLink).where(FishSeasonLink.fish_id == fish_id))
+            await session.execute(delete(FishWeatherLink).where(FishWeatherLink.fish_id == fish_id))
+            await session.execute(delete(FishLureLink).where(FishLureLink.fish_id == fish_id))
+            await session.execute(delete(FishInventoryLink).where(FishInventoryLink.fish_id == fish_id))
+            from app.store.models import FishTimeLink
+            await session.execute(delete(FishTimeLink).where(FishTimeLink.fish_id == fish_id))
+            
+            # Обнуляем связи в других таблицах
+            await session.execute(update(Groundbait).where(Groundbait.fish_id == fish_id).values(fish_id=None))
+            await session.execute(update(CatchPost).where(CatchPost.fish_id == fish_id).values(fish_id=None))
+            
             await session.execute(delete(Fish).where(Fish.id == fish_id))
             
             await session.commit()
@@ -211,6 +227,17 @@ class AdminAccessor(BaseAccessor):
             if not waterbody:
                 raise ValueError("Не найден водоем с таким id")
             
+            # Удаляем связи
+            await session.execute(delete(FishWaterbodyLink).where(FishWaterbodyLink.waterbody_id == waterbody_id))
+            await session.execute(delete(FavoriteWaterbody).where(FavoriteWaterbody.waterbody_id == waterbody_id))
+            await session.execute(delete(WaterbodyReview).where(WaterbodyReview.waterbody_id == waterbody_id))
+            from app.store.models import WaterbodySpot
+            await session.execute(delete(WaterbodySpot).where(WaterbodySpot.waterbody_id == waterbody_id))
+            
+            # Обнуляем связи в постах и темах, чтобы не удалять контент пользователей
+            await session.execute(update(CatchPost).where(CatchPost.waterbody_id == waterbody_id).values(waterbody_id=None))
+            await session.execute(update(ForumTopic).where(ForumTopic.waterbody_id == waterbody_id).values(waterbody_id=None))
+            
             await session.execute(delete(Waterbody).where(Waterbody.id == waterbody_id))
             
             await session.commit()
@@ -233,6 +260,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(Season))
             return res.scalars().all()
 
+    async def get_season(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(Season).where(Season.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_season(self, data: dict):
         async with self.app.database.get_session() as session:
             item = Season(**data)
@@ -242,11 +274,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_season(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_season(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(Season).where(Season.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(Season).where(Season.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_season(item_id)
 
     async def delete_season(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -259,6 +292,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(WeatherCondition))
             return res.scalars().all()
 
+    async def get_weather(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(WeatherCondition).where(WeatherCondition.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_weather(self, data: dict):
         async with self.app.database.get_session() as session:
             item = WeatherCondition(**data)
@@ -268,11 +306,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_weather(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_weather(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(WeatherCondition).where(WeatherCondition.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(WeatherCondition).where(WeatherCondition.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_weather(item_id)
 
     async def delete_weather(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -285,6 +324,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(FishingTime))
             return res.scalars().all()
 
+    async def get_fishing_time(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(FishingTime).where(FishingTime.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_fishing_time(self, data: dict):
         async with self.app.database.get_session() as session:
             item = FishingTime(**data)
@@ -294,11 +338,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_fishing_time(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_fishing_time(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(FishingTime).where(FishingTime.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(FishingTime).where(FishingTime.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_fishing_time(item_id)
 
     async def delete_fishing_time(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -311,6 +356,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(Inventory))
             return res.scalars().all()
 
+    async def get_inventory(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(Inventory).where(Inventory.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_inventory(self, data: dict):
         async with self.app.database.get_session() as session:
             item = Inventory(**data)
@@ -320,11 +370,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_inventory(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_inventory(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(Inventory).where(Inventory.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(Inventory).where(Inventory.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_inventory(item_id)
 
     async def delete_inventory(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -337,6 +388,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(Lure))
             return res.scalars().all()
 
+    async def get_lure(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(Lure).where(Lure.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_lure(self, data: dict):
         async with self.app.database.get_session() as session:
             item = Lure(**data)
@@ -346,11 +402,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_lure(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_lure(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(Lure).where(Lure.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(Lure).where(Lure.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_lure(item_id)
 
     async def delete_lure(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -363,6 +420,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(Groundbait))
             return res.scalars().all()
 
+    async def get_groundbait(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(Groundbait).where(Groundbait.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_groundbait(self, data: dict):
         async with self.app.database.get_session() as session:
             item = Groundbait(**data)
@@ -372,11 +434,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_groundbait(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_groundbait(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(Groundbait).where(Groundbait.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(Groundbait).where(Groundbait.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_groundbait(item_id)
 
     async def delete_groundbait(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -451,23 +514,49 @@ class AdminAccessor(BaseAccessor):
     # --- CATCH POST ---
     async def get_catch_post_list(self) -> list:
         async with self.app.database.get_session() as session:
-            res = await session.execute(select(CatchPost))
+            res = await session.execute(
+                select(CatchPost).options(
+                    selectinload(CatchPost.fish).selectinload(Fish.category),
+                    selectinload(CatchPost.waterbody).selectinload(Waterbody.spots),
+                    selectinload(CatchPost.waterbody).selectinload(Waterbody.fish_links).selectinload(FishWaterbodyLink.fish).selectinload(Fish.category)
+                )
+            )
             return res.scalars().all()
+
+    async def get_catch_post(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(
+                select(CatchPost).where(CatchPost.id == item_id).options(
+                    selectinload(CatchPost.fish).selectinload(Fish.category),
+                    selectinload(CatchPost.waterbody).selectinload(Waterbody.spots),
+                    selectinload(CatchPost.waterbody).selectinload(Waterbody.fish_links).selectinload(FishWaterbodyLink.fish).selectinload(Fish.category)
+                )
+            )
+            return res.scalar_one_or_none()
 
     async def create_catch_post(self, data: dict):
         async with self.app.database.get_session() as session:
             item = CatchPost(**data)
             session.add(item)
-            await session.commit()
-            await session.refresh(item)
-            return item
+            await session.flush()
+            item_id = item.id
+            
+            res = await session.execute(
+                select(CatchPost).where(CatchPost.id == item_id).options(
+                    selectinload(CatchPost.fish).selectinload(Fish.category),
+                    selectinload(CatchPost.waterbody).selectinload(Waterbody.spots),
+                    selectinload(CatchPost.waterbody).selectinload(Waterbody.fish_links).selectinload(FishWaterbodyLink.fish).selectinload(Fish.category)
+                )
+            )
+            return res.scalar_one()
 
     async def update_catch_post(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_catch_post(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(CatchPost).where(CatchPost.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(CatchPost).where(CatchPost.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_catch_post(item_id)
 
     async def delete_catch_post(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -480,6 +569,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(ForumTopic))
             return res.scalars().all()
 
+    async def get_forum_topic(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(ForumTopic).where(ForumTopic.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_forum_topic(self, data: dict):
         async with self.app.database.get_session() as session:
             item = ForumTopic(**data)
@@ -489,11 +583,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_forum_topic(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_forum_topic(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(ForumTopic).where(ForumTopic.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(ForumTopic).where(ForumTopic.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_forum_topic(item_id)
 
     async def delete_forum_topic(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -506,6 +601,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(ForumMessage))
             return res.scalars().all()
 
+    async def get_forum_message(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(ForumMessage).where(ForumMessage.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_forum_message(self, data: dict):
         async with self.app.database.get_session() as session:
             item = ForumMessage(**data)
@@ -515,11 +615,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_forum_message(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_forum_message(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(ForumMessage).where(ForumMessage.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(ForumMessage).where(ForumMessage.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_forum_message(item_id)
 
     async def delete_forum_message(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -532,6 +633,11 @@ class AdminAccessor(BaseAccessor):
             res = await session.execute(select(WaterbodyReview))
             return res.scalars().all()
 
+    async def get_waterbody_review(self, item_id: int):
+        async with self.app.database.get_session() as session:
+            res = await session.execute(select(WaterbodyReview).where(WaterbodyReview.id == item_id))
+            return res.scalar_one_or_none()
+
     async def create_waterbody_review(self, data: dict):
         async with self.app.database.get_session() as session:
             item = WaterbodyReview(**data)
@@ -541,11 +647,12 @@ class AdminAccessor(BaseAccessor):
             return item
 
     async def update_waterbody_review(self, item_id: int, data: dict):
+        if not data:
+            return await self.get_waterbody_review(item_id)
         async with self.app.database.get_session() as session:
             await session.execute(update(WaterbodyReview).where(WaterbodyReview.id == item_id).values(**data))
             await session.commit()
-            res = await session.execute(select(WaterbodyReview).where(WaterbodyReview.id == item_id))
-            return res.scalar_one_or_none()
+        return await self.get_waterbody_review(item_id)
 
     async def delete_waterbody_review(self, item_id: int):
         async with self.app.database.get_session() as session:
@@ -578,6 +685,68 @@ class AdminAccessor(BaseAccessor):
     async def delete_user_inventory(self, user_id: int, inventory_id: int):
         async with self.app.database.get_session() as session:
             await session.execute(delete(UserInventory).where(UserInventory.user_id == user_id, UserInventory.inventory_id == inventory_id))
+            await session.commit()
+
+    # === СОХРАНЕННЫЕ РЕКОМЕНДАЦИИ ===
+    async def save_recommendation(self, data: dict) -> SavedRecommendation:
+        async with self.app.database.get_session() as session:
+            rec = SavedRecommendation(**data)
+            session.add(rec)
+            await session.flush()
+            rec_id = rec.id
+            
+            stmt = (
+                select(SavedRecommendation)
+                .options(
+                    selectinload(SavedRecommendation.fish).selectinload(Fish.category),
+                    selectinload(SavedRecommendation.waterbody).selectinload(Waterbody.spots),
+                    selectinload(SavedRecommendation.waterbody).selectinload(Waterbody.fish_links).selectinload(FishWaterbodyLink.fish).selectinload(Fish.category),
+                    selectinload(SavedRecommendation.rod),
+                    selectinload(SavedRecommendation.jacket),
+                    selectinload(SavedRecommendation.pants),
+                    selectinload(SavedRecommendation.shoes),
+                    selectinload(SavedRecommendation.head),
+                    selectinload(SavedRecommendation.lure),
+                    selectinload(SavedRecommendation.groundbait)
+                )
+                .where(SavedRecommendation.id == rec_id)
+            )
+            res = await session.execute(stmt)
+            return res.scalar_one_or_none()
+
+    async def get_saved_recommendations(self, user_id: int) -> list[SavedRecommendation]:
+        async with self.app.database.get_session() as session:
+            stmt = (
+                select(SavedRecommendation)
+                .options(
+                    selectinload(SavedRecommendation.fish).selectinload(Fish.category),
+                    selectinload(SavedRecommendation.waterbody).selectinload(Waterbody.spots),
+                    selectinload(SavedRecommendation.waterbody).selectinload(Waterbody.fish_links).selectinload(FishWaterbodyLink.fish).selectinload(Fish.category),
+                    selectinload(SavedRecommendation.rod),
+                    selectinload(SavedRecommendation.jacket),
+                    selectinload(SavedRecommendation.pants),
+                    selectinload(SavedRecommendation.shoes),
+                    selectinload(SavedRecommendation.head),
+                    selectinload(SavedRecommendation.lure),
+                    selectinload(SavedRecommendation.groundbait)
+                )
+                .where(SavedRecommendation.user_id == user_id)
+                .order_by(SavedRecommendation.created_at.desc())
+            )
+            result = await session.execute(stmt)
+            return result.scalars().all()
+
+    async def delete_saved_recommendation(self, rec_id: int, user_id: int):
+        async with self.app.database.get_session() as session:
+            stmt = select(SavedRecommendation).where(SavedRecommendation.id == rec_id)
+            res = await session.execute(stmt)
+            rec = res.scalar_one_or_none()
+            if not rec:
+                raise ValueError("Recommendation not found")
+            if getattr(self.app.request, "role", None) != UserRole.ADMIN.value and rec.user_id != user_id:
+                raise ValueError("Permission denied")
+            
+            await session.delete(rec)
             await session.commit()
 
     # --- RECOMMENDATIONS (CORE) ---
@@ -641,7 +810,7 @@ class AdminAccessor(BaseAccessor):
             api_key = "jameshypebitch"
             advice_text = "Не удалось получить совет."
             
-            prompt = f"Ты - опытный рыболов-эксперт. Общайся на скуфском рыболовском сленге как будто с дедом. Используй двусвязные неуместные несуществующие составные слова (например аналогичнодерябаю, консенсуснопримечающееся). Пользователь собирается на рыбалку. Водоем: {waterbody_name}. Целевая рыба: {fish_name}. Снаряжение пользователя: Удочка: {user_rod or 'Не выбрано'}, Наживка: {user_lure or 'Не выбрано'}, Прикормка: {user_groundbait or 'Не выбрано'}, Одежда: {user_clothes or 'Не выбрано'}. Оцени этот инвентарь и дай краткий, полезный совет на 2-3 абзаца. Отвечай на русском языке, как профи, без лишних предисловий."
+            prompt = f"Ты - опытный рыболов-эксперт. Пользователь собирается на рыбалку. Водоем: {waterbody_name}. Целевая рыба: {fish_name}. Снаряжение пользователя: Удочка: {user_rod or 'Не выбрано'}, Наживка: {user_lure or 'Не выбрано'}, Прикормка: {user_groundbait or 'Не выбрано'}, Одежда: {user_clothes or 'Не выбрано'}. Оцени этот инвентарь и дай краткий, полезный совет на 2-3 абзаца. Отвечай на русском языке, как профи, без лишних предисловий. Если компонент не выбран, то посоветуй что-то."
             
             url = f"https://gateway.ai.home.vadimrm.com/gemini/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
             payload = {

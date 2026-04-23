@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import { useRecommendation } from '../context/RecommendationContext';
 import api from '../api/api';
 import bgImg from '/src/assets/images/background/lake_bg.jpg';
-import { Fish, MapPin, Package, AlertCircle } from 'lucide-react';
+import { Fish, MapPin, Package, AlertCircle, Bookmark } from 'lucide-react';
 
 const ReportPage = () => {
     const canvasRef = useRef(null);
@@ -12,6 +12,11 @@ const ReportPage = () => {
     const navigate = useNavigate();
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+
+    // Сохраняем исходные выборы, чтобы не потерять их при сбросе
+    const [savedSelections, setSavedSelections] = useState(null);
 
     useEffect(() => {
         const fetchReport = async () => {
@@ -28,8 +33,7 @@ const ReportPage = () => {
                 };
                 const res = await api.post('/api/recommendation', body);
                 setReportData(res.data.data);
-                // Очищаем черновик ТОЛЬКО при успешном получении рекомендации
-                resetSelections();
+                setSavedSelections(selections);
             } catch(e) {
                 console.error(e);
             } finally {
@@ -37,7 +41,41 @@ const ReportPage = () => {
             }
         };
         fetchReport();
-    }, []); // Убираем selections из зависимостей, чтобы не зациклить после resetSelections
+        
+        // Очищаем черновик при выходе со страницы
+        return () => {
+            resetSelections();
+        };
+    }, []); // Убираем selections из зависимостей
+
+    const handleSavePlan = async () => {
+        if (!reportData || !savedSelections) return;
+        
+        setIsSaving(true);
+        try {
+            const body = {
+                fish_id: savedSelections.fish?.id,
+                waterbody_id: savedSelections.waterbody?.id,
+                rod_id: savedSelections.equipment?.['удочка']?.id,
+                jacket_id: savedSelections.equipment?.['куртка']?.id,
+                pants_id: savedSelections.equipment?.['штаны']?.id,
+                shoes_id: savedSelections.equipment?.['обувь']?.id,
+                head_id: savedSelections.equipment?.['головной убор']?.id,
+                lure_id: savedSelections.lure?.id,
+                groundbait_id: savedSelections.groundbait?.id,
+                advice: reportData.advice_text
+            };
+            
+            await api.post('/api/saved_recommendations', body);
+            setIsSaved(true);
+            alert("Сборка успешно сохранена в профиль!");
+        } catch (e) {
+            console.error(e);
+            alert("Ошибка при сохранении сборки. Вы авторизованы?");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     // Анимация фона
     useEffect(() => {
@@ -112,7 +150,15 @@ const ReportPage = () => {
                             <div className="text-white text-lg leading-relaxed whitespace-pre-line">
                                 {reportData.advice_text}
                             </div>
-                            <div className="mt-auto pt-8">
+                            <div className="mt-auto pt-8 flex flex-col gap-4">
+                                <button 
+                                    onClick={handleSavePlan}
+                                    disabled={isSaving || isSaved}
+                                    className={`w-full flex items-center justify-center gap-2 py-4 text-xl border-2 border-black shadow-[4px_4px_0_black] active:translate-y-1 active:shadow-none transition-all uppercase text-black ${isSaved ? 'bg-green-500' : 'bg-blue-400 hover:bg-blue-300'}`}
+                                >
+                                    <Bookmark />
+                                    {isSaved ? "Сохранено!" : (isSaving ? "Сохранение..." : "Сохранить сборку")}
+                                </button>
                                 <button 
                                     onClick={() => navigate('/inventory')}
                                     className="w-full bg-yellow-500 hover:bg-yellow-400 border-2 border-black py-4 text-xl shadow-[4px_4px_0_black] active:translate-y-1 active:shadow-none transition-all uppercase text-black"
@@ -128,8 +174,8 @@ const ReportPage = () => {
                             <div className="bg-[#EAD4AA] border-4 border-black shadow-[8px_8px_0_rgba(0,0,0,1)] p-6">
                                 <h3 className="text-xl mb-4 border-b-2 border-black pb-2 flex gap-2 items-center"><MapPin/> Цель</h3>
                                 <div className="text-lg">
-                                    <p><b>Водоем:</b> {selections.waterbody?.name || "Не выбран"}</p>
-                                    <p><b>Ожидаемая рыба:</b> {selections.fish?.name || "Любая"}</p>
+                                    <p><b>Водоем:</b> {savedSelections?.waterbody?.name || "Не выбран"}</p>
+                                    <p><b>Ожидаемая рыба:</b> {savedSelections?.fish?.name || "Любая"}</p>
                                 </div>
                             </div>
 

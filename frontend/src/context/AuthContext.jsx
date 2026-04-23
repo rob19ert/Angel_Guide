@@ -67,8 +67,21 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const updateUser = async (updateData) => {
+        try {
+            const response = await api.patch('/api/me', updateData);
+            if (response.data && response.data.status === "ok") {
+                setUser(response.data.data); // Обновляем данные юзера в контексте
+                return response.data.data;
+            }
+        } catch (error) {
+            console.error("Update user error:", error);
+            throw error;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ login, register, logout, isAuthenticated, isLoading, user }}>
+        <AuthContext.Provider value={{ login, register, logout, updateUser, isAuthenticated, isLoading, user, setUser }}>
             {children}
         </AuthContext.Provider>
     );

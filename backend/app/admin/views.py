@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.admin.schemes import (
     AdminLoginRequestSchema, AdminLoginResponseSchema, 
     AdminRegisterRequestSchema, AdminRegisterResponseSchema, 
-    BanUserRequestSchema, ForumTopicCreateRequestSchema, UserSchema, FishCategorySchema, 
+    BanUserRequestSchema, ForumTopicCreateRequestSchema, UpdateUserRequestSchema, UserSchema, FishCategorySchema, 
     FishSchema, FishListResponseSchema, WaterbodySchema, 
     SeasonSchema, SeasonListResponseSchema, WeatherConditionSchema, 
     WeatherConditionListResponseSchema, FishingTimeSchema, 
@@ -21,7 +21,8 @@ from app.admin.schemes import (
     WaterbodyReviewListResponseSchema, FavoriteWaterbodySchema, 
     UserInventorySchema, FishWaterbodyLinkSchema, FishSeasonLinkSchema,
     FishWeatherLinkSchema, FishLureLinkSchema, FishInventoryLinkSchema,
-    RecommendationRequestSchema, RecommendationResponseSchema
+    RecommendationRequestSchema, RecommendationResponseSchema,
+    SavedRecommendationSchema, SavedRecommendationListResponseSchema
 )
 
 ADMIN_CREATION_SECRET = "my_super_secret_key_for_diploma_2026"
@@ -56,7 +57,12 @@ class AdminLogin(View):
                 email=data["email"], password=data["password"]
             )
             token = login_data["token"]
-            response = json_response(data={"message": "Logged in successfully"})
+            role = login_data["role"]
+            response = json_response(data={
+                "token": token,
+                "role": role,
+                "message": "Logged in successfully"
+            })
             response.set_cookie(
                 "token", 
                 token, 
@@ -77,18 +83,47 @@ class AdminMeView(View):
         user_id = self.request.user_id
         # ЛОГ ДЛЯ ОТЛАДКИ ПРАВ
         print(f"DEBUG: Request from User ID {user_id}, Role {getattr(self.request, 'role', 'None')}")
-        
+
         async with self.request.app.database.get_session() as session:
             from app.store.models import User
             res = await session.execute(select(User).where(User.id == user_id))
             user = res.scalar_one_or_none()
             if not user:
                 raise web.HTTPUnauthorized(reason="User not found")
-            
+
             dumped = UserSchema().dump(user)
             print(f"DEBUG: Response data: {dumped}")
             return json_response(data=dumped)
 
+    @docs(tags=["user"], summary="Обновить профиль", description="Обновление данных профиля пользователя")
+    @request_schema(UpdateUserRequestSchema)
+    @response_schema(UserSchema)
+    @login_required
+    async def patch(self):
+        user_id = self.request.user_id
+        data = self.request["data"]
+
+        async with self.request.app.database.get_session() as session:
+            from app.store.models import User
+            res = await session.execute(select(User).where(User.id == user_id))
+            user = res.scalar_one_or_none()
+            if not user:
+                raise web.HTTPUnauthorized(reason="User not found")
+
+            if "username" in data:
+                user.username = data["username"]
+            if "email" in data:
+                user.email = data["email"]
+            if "avatar_url" in data:
+                user.avatar_url = data["avatar_url"]
+            if "password" in data:
+                import bcrypt
+                user.password_hash = bcrypt.hashpw(data["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+            await session.commit()
+
+            dumped = UserSchema().dump(user)
+            return json_response(data=dumped)
 class AdminUsersListView(View):
     @docs(tags=["admin"], summary="Список пользователей")
     @response_schema(UserSchema(many=True))
@@ -797,6 +832,35 @@ class RecommendationView(View):
         }
         return json_response(data=serialized_result)
 
+class SavedRecommendationView(View):
+    @docs(tags=["Core"], summary="Список сохраненных сборок")
+    @response_schema(SavedRecommendationListResponseSchema)
+    @login_required
+    async def get(self):
+        items = await self.request.app.store.admin.get_saved_recommendations(self.request.user_id)
+        return json_response(data={"saved_recommendations": SavedRecommendationSchema(many=True).dump(items)})
+
+    @docs(tags=["Core"], summary="Сохранить сборку")
+    @request_schema(SavedRecommendationSchema)
+    @response_schema(SavedRecommendationSchema)
+    @login_required
+    async def post(self):
+        data = self.request["data"]
+        data["user_id"] = self.request.user_id
+        item = await self.request.app.store.admin.save_recommendation(data)
+        return json_response(data=SavedRecommendationSchema().dump(item))
+
+class SavedRecommendationDeleteView(View):
+    @docs(tags=["Core"], summary="Удалить сохраненную сборку")
+    @login_required
+    async def delete(self):
+        item_id = int(self.request.match_info["id"])
+        try:
+            await self.request.app.store.admin.delete_saved_recommendation(item_id, self.request.user_id)
+            return json_response(status="Успешно удалено")
+        except ValueError as e:
+            raise web.HTTPNotFound(reason=str(e))
+
 # --- WEATHER ---
 class ForecastMoscowView(View):
     @docs(
@@ -832,4 +896,89 @@ class ForecastWaterbodyView(View):
             waterbody.latitude, waterbody.longitude
         )
         return json_response(data=weather)
+
+
+class ForecastCalculateView(View):
+    @docs(
+        tags=["Weather"],
+        summary="Расчет прогноза клева",
+        description="Рассчитывает график клева по дате, водоему и рыбе"
+    )
+    async def get(self):
+        waterbody_id = self.request.query.get("waterbody_id")
+        fish_id = self.request.query.get("fish_id")
+        date_str = self.request.query.get("date")
+
+        if not waterbody_id or not date_str:
+            return json_response(data={"error": "Необходимы параметры waterbody_id и date"}, status="error")
+
+        try:
+            waterbody_id = int(waterbody_id)
+        except ValueError:
+            return json_response(data={"error": "Неверный формат waterbody_id"}, status="error")
+
+        fish_not_in_waterbody = False
+        async with self.request.app.database.get_session() as session:
+            stmt = select(Waterbody).where(Waterbody.id == waterbody_id)
+            result = await session.execute(stmt)
+            waterbody = result.scalar_one_or_none()
+
+            fish_name = "Любая рыба"
+            if fish_id and fish_id != "all":
+                try:
+                    fish_id_int = int(fish_id)
+                    from app.store.models import Fish, FishWaterbodyLink
+                    stmt_fish = select(Fish).where(Fish.id == fish_id_int)
+                    result_fish = await session.execute(stmt_fish)
+                    fish = result_fish.scalar_one_or_none()
+                    if fish:
+                        fish_name = fish.name
+                        stmt_link = select(FishWaterbodyLink).where(
+                            FishWaterbodyLink.fish_id == fish_id_int,
+                            FishWaterbodyLink.waterbody_id == waterbody_id
+                        )
+                        result_link = await session.execute(stmt_link)
+                        link = result_link.scalar_one_or_none()
+                        if not link:
+                            fish_not_in_waterbody = True
+                except ValueError:
+                    pass
+        
+        if not waterbody:
+            raise web.HTTPNotFound(reason="Водоем не найден")
+        
+        if not waterbody.latitude or not waterbody.longitude:
+            return json_response(data={"error": "Координаты водоема не указаны"}, status="error")
+
+        weather_forecast = await self.request.app.store.weather.get_fishing_forecast(
+            waterbody.latitude, waterbody.longitude, date_str
+        )
+
+        if "error" in weather_forecast:
+            return json_response(data={"error": weather_forecast["error"]}, status="error")
+
+        if fish_not_in_waterbody:
+            response_data = {
+                "state": {
+                    "waterbody": waterbody.name,
+                    "fish": fish_name,
+                    "date": date_str
+                },
+                "chartData": [],
+                "weatherSummary": weather_forecast["weatherSummary"],
+                "advice": f"Внимание: {fish_name} не водится в водоеме {waterbody.name}."
+            }
+        else:
+            response_data = {
+                "state": {
+                    "waterbody": waterbody.name,
+                    "fish": fish_name,
+                    "date": date_str
+                },
+                "chartData": weather_forecast["chartData"],
+                "weatherSummary": weather_forecast["weatherSummary"],
+                "advice": weather_forecast["advice"]
+            }
+
+        return json_response(data=response_data)
 

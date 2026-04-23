@@ -9,9 +9,9 @@ import L from 'leaflet';
 import api from '../api/api';
 import { useRecommendation } from '../context/RecommendationContext';
 
-const pixelIcon = new L.divIcon({
+const createPixelIcon = (imageUrl) => new L.divIcon({
     className: 'custom-div-icon',
-    html: `<div class="w-10 h-10 bg-yellow-400 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center pixelated overflow-hidden"><img src="/src/assets/images/mini_lake.jpg" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" /></div>`,
+    html: `<div class="w-10 h-10 bg-yellow-400 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center pixelated overflow-hidden"><img src="${imageUrl || '/src/assets/images/mini_lake.jpg'}" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" /></div>`,
     iconSize:[40, 40],
     iconAnchor:[20, 40],
     popupAnchor:[0, -40]
@@ -246,7 +246,7 @@ const LakeDetailPage = () => {
                             >
                                 <div className="w-full md:w-64 h-48 md:h-40 flex-shrink-0 border-2 border-black/50 overflow-hidden bg-gray-300">
                                     <img
-                                        src={water.image_url || '/src/assets/images/mini_lake.jpg'}
+                                        src={water.image_url}
                                         alt={water.name}
                                         className="w-full h-full object-cover pixelated group-hover:scale-110 transition-transform duration-500"
                                         onError={(e) => {e.target.src = 'https://via.placeholder.com/300x200?text=No+Image'}}
@@ -301,11 +301,11 @@ const LakeDetailPage = () => {
                                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
                             />
                             {filteredWater.map((water) => (
-                                <Marker key={water.id} position={[water.latitude || 55.75, water.longitude || 37.57]} icon={pixelIcon}>
+                                <Marker key={water.id} position={[water.latitude || 55.75, water.longitude || 37.57]} icon={createPixelIcon(water.image_url)}>
                                     <Popup className="pixel-popup" closeButton={false}>
                                         <div className="font-pixel flex flex-col items-center gap-2 w-48">
                                             <h3 className="text-lg font-bold text-center border-b-2 border-black/50 w-full pb-1">{water.name}</h3>
-                                            <img src={water.image_url || '/src/assets/images/mini_lake.jpg'} alt={water.name} className="w-full h-24 object-cover border-2 border-black pixelated" />
+                                            <img src={water.image_url} alt={water.name} className="w-full h-24 object-cover border-2 border-black pixelated" />
                                             <p className="text-sm">Тип: {water.type}</p>
                                             <button 
                                                 onClick={() => handleSelectWaterbody(water)}

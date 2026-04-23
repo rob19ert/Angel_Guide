@@ -13,12 +13,14 @@ import GuideMapPage from './pages/GuideMapPage';
 import WinterPage from './pages/WinterPage';
 import InventoryPage from "./pages/InventoryPage.jsx";
 import EquipmentPage from "./pages/EquipmentPage.jsx";
+import EquipmentDetailPage from "./pages/EquipmentDetailPage.jsx";
 import LakeDetailPage from "./pages/LakeDetailPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import LakeInfoPage from "./pages/ExperimentPage.jsx";
 import ForecastPage from "./pages/ForecastPage.jsx";
 import ForumPage from "./pages/ForumPage.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
+import SavedPlanPage from "./pages/SavedPlanPage.jsx";
 
 import TitlePage from "./pages/TitlePage.jsx";
 
@@ -40,7 +42,6 @@ function App() {
                     <Route path="/fish" element={<FishPage />} />
                     <Route path="/groundbaits" element={<GroundbaitPage />} />
                     <Route path="/lures" element={<LurePage />} />
-                    <Route path="/guide" element={<GuideMapPage />} />
                     <Route path="/winter" element={<WinterPage />} />
                     <Route path="/water" element={<LakeDetailPage />} />
                     <Route path="/lakes/:id" element={<LakeInfoPage />} />
@@ -48,10 +49,13 @@ function App() {
                     <Route path="/forum" element={<ForumPage />} />
 
                     {/* Protected Routes */}
-                    <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
+                    <Route path="/guide" element={<ProtectedRoute><GuideMapPage /></ProtectedRoute>} />
                     <Route path="/equipment" element={<ProtectedRoute><EquipmentPage /></ProtectedRoute>} />
+                    <Route path="/equipment/:id" element={<ProtectedRoute><EquipmentDetailPage /></ProtectedRoute>} />
+                    <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                     <Route path="/report" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+                    <Route path="/saved-plan/:id" element={<ProtectedRoute><SavedPlanPage /></ProtectedRoute>} />
                 </Routes>
             </RecommendationProvider>
         </AuthProvider>

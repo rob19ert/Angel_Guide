@@ -28,6 +28,7 @@ class UserSchema(Schema):
     email = fields.Str()
     role = fields.Method("get_role", dump_only=True)
     is_banned = fields.Bool()
+    avatar_url = fields.Str(allow_none=True)
 
     def get_role(self, obj):
         if hasattr(obj, 'role'):
@@ -37,6 +38,12 @@ class UserSchema(Schema):
                 return val.replace("UserRole.", "").lower()
             return val.lower()
         return "user"
+
+class UpdateUserRequestSchema(Schema):
+    username = fields.Str(required=False)
+    email = fields.Str(required=False)
+    password = fields.Str(required=False)
+    avatar_url = fields.Str(required=False)
 
 class UserResponseSchema(Schema):
     users = fields.Nested(UserSchema, many = True)
@@ -130,6 +137,7 @@ class InventorySchema(Schema):
     name = fields.Str(required=True)
     # Для Enum в Marshmallow используем fields.Enum
     category = fields.Enum(InventoryCategory, by_value=True, required=True) 
+    filter_type = fields.Str(allow_none=True)
     price = fields.Float(allow_none=True)
     description = fields.Str(allow_none=True)
     image_url = fields.Str(allow_none=True)
@@ -203,6 +211,9 @@ class CatchPostSchema(Schema):
     weight = fields.Float(allow_none=True)
     created_at = fields.DateTime(dump_only=True)
 
+    fish = fields.Nested(FishSchema, dump_only=True)
+    waterbody = fields.Nested(WaterbodySchema, dump_only=True)
+
 class CatchPostListResponseSchema(Schema):
     catch_posts = fields.Nested(CatchPostSchema, many=True)
 
@@ -271,3 +282,31 @@ class RecommendationResponseSchema(Schema):
     recommended_lures = fields.Nested(LureSchema, many=True, description="Рекомендуемые приманки")
     recommended_groundbaits = fields.Nested(GroundbaitSchema, many=True, description="Рекомендуемая прикормка")
     advice_text = fields.Str(description="Текстовый совет")
+
+class SavedRecommendationSchema(Schema):
+    id = fields.Int(dump_only=True)
+    user_id = fields.Int(dump_only=True)
+    fish_id = fields.Int(allow_none=True)
+    waterbody_id = fields.Int(allow_none=True)
+    rod_id = fields.Int(allow_none=True)
+    jacket_id = fields.Int(allow_none=True)
+    pants_id = fields.Int(allow_none=True)
+    shoes_id = fields.Int(allow_none=True)
+    head_id = fields.Int(allow_none=True)
+    lure_id = fields.Int(allow_none=True)
+    groundbait_id = fields.Int(allow_none=True)
+    advice = fields.Str(allow_none=True)
+    created_at = fields.DateTime(dump_only=True)
+
+    fish = fields.Nested(FishSchema, dump_only=True)
+    waterbody = fields.Nested(WaterbodySchema, dump_only=True)
+    rod = fields.Nested(InventorySchema, dump_only=True)
+    jacket = fields.Nested(InventorySchema, dump_only=True)
+    pants = fields.Nested(InventorySchema, dump_only=True)
+    shoes = fields.Nested(InventorySchema, dump_only=True)
+    head = fields.Nested(InventorySchema, dump_only=True)
+    lure = fields.Nested(LureSchema, dump_only=True)
+    groundbait = fields.Nested(GroundbaitSchema, dump_only=True)
+
+class SavedRecommendationListResponseSchema(Schema):
+    saved_recommendations = fields.Nested(SavedRecommendationSchema, many=True)

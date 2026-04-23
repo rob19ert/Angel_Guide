@@ -75,25 +75,30 @@ def admin_setyp_routes(app: "Application"):
     app.router.add_view(r"/admin/links/fish_inventory/{fish_id:\d+}/{inventory_id:\d+}", AdminFishInventoryLinkDeleteView)
 
     app.router.add_view("/api/catch_posts", CatchPostView)
-    app.router.add_view(r"/admin/catch_posts/{id:\d+}", CatchPostItemView)
+    app.router.add_view(r"/api/catch_posts/{id:\d+}", CatchPostItemView)
     
     app.router.add_view("/api/forum_topics", ForumTopicView)
-    app.router.add_view(r"/admin/forum_topics/{id:\d+}", ForumTopicItemView)
+    app.router.add_view(r"/api/forum_topics/{id:\d+}", ForumTopicItemView)
     
     app.router.add_view("/api/forum_messages", ForumMessageView)
-    app.router.add_view(r"/admin/forum_messages/{id:\d+}", ForumMessageItemView)
+    app.router.add_view(r"/api/forum_messages/{id:\d+}", ForumMessageItemView)
     
     app.router.add_view("/api/waterbody_reviews", WaterbodyReviewView)
-    app.router.add_view(r"/admin/waterbody_reviews/{id:\d+}", WaterbodyReviewItemView)
-    
-    app.router.add_view("/admin/favorite_waterbodies", FavoriteWaterbodyView)
-    app.router.add_view(r"/admin/favorite_waterbodies/{user_id:\d+}/{waterbody_id:\d+}", FavoriteWaterbodyDeleteView)
-    
-    app.router.add_view("/admin/user_inventory", UserInventoryView)
-    app.router.add_view(r"/admin/user_inventory/{user_id:\d+}/{inventory_id:\d+}", UserInventoryDeleteView)
+    app.router.add_view(r"/api/waterbody_reviews/{id:\d+}", WaterbodyReviewItemView)
+
+    app.router.add_view("/api/favorite_waterbodies", FavoriteWaterbodyView)
+    app.router.add_view(r"/api/favorite_waterbodies/{user_id:\d+}/{waterbody_id:\d+}", FavoriteWaterbodyDeleteView)
+
+    app.router.add_view("/api/user_inventory", UserInventoryView)
+    app.router.add_view(r"/api/user_inventory/{user_id:\d+}/{inventory_id:\d+}", UserInventoryDeleteView)
+
+    from app.admin.views import SavedRecommendationView, SavedRecommendationDeleteView
+    app.router.add_view("/api/saved_recommendations", SavedRecommendationView)
+    app.router.add_view(r"/api/saved_recommendations/{id:\d+}", SavedRecommendationDeleteView)
 
     app.router.add_view("/api/recommendation", RecommendationView)
 
-    from app.admin.views import ForecastMoscowView, ForecastWaterbodyView
+    from app.admin.views import ForecastMoscowView, ForecastWaterbodyView, ForecastCalculateView
     app.router.add_view("/api/forecast/moscow", ForecastMoscowView)
     app.router.add_view(r"/api/forecast/waterbody/{id:\d+}", ForecastWaterbodyView)
+    app.router.add_view("/api/forecast/calculate", ForecastCalculateView)

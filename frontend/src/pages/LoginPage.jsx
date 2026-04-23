@@ -51,7 +51,7 @@ const LoginPage = () => {
         setError('');
         try {
             await login(email, password);
-            navigate('/profile'); // После успешного входа идем в профиль
+            navigate('/'); // После успешного входа идем на главную
         } catch (err) {
             setError('Ошибка: ' + (err.response?.data?.message || 'Неверный логин или пароль'));
         }

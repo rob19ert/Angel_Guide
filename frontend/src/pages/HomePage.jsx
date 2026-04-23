@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
 const HomePage = () => {
@@ -122,11 +123,11 @@ const HomePage = () => {
                     <div className="text-white text-4xl font-pixel drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">
                         Думай меньше
                     </div>
-                    <a href="guide">
+                    <Link to="/guide">
                         <button className="bg-[#FFBF00] mt-[5.2rem] w-[14rem] font-pixel text-black text-base px-[1.1875rem] py-[1.5625rem] shadow-[inset_-7px_-7px_0_0_#B28601] border-black border-2 hover:bg-[#FFD700] hover:-translate-y-0.5 transition-all active:translate-y-1 active:shadow-none">
                             Получить план
                         </button>
-                    </a>
+                    </Link>
                 </div>
 
                 {/* Правая часть: Стеклянные карточки */}

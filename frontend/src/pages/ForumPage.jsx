@@ -200,8 +200,8 @@ const ForumPage = () => {
             <div className="flex-1 overflow-hidden w-full mt-4 flex justify-center pb-10">
                 <div className="container px-4 md:px-[5.5rem] h-full flex flex-col max-w-7xl">
                     
-                    <div className="text-center mb-6">
-                        <h1 className="text-4xl text-[#FFFFB7] drop-shadow-[2px_2px_0_rgba(0,0,0,1)] tracking-wider uppercase">
+                    <div className="text-center mt-3 mb-6">
+                        <h1 className="text-4xl text-[#FFFFB7] drop-shadow-[2px_2px_0_rgba(0,0,0,1)] tracking-wider">
                             Форум Рыболовов
                         </h1>
                     </div>
